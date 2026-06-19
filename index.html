@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Huella de Carbono — 85 actividades</title>
+<style>
+  :root {
+    --green: #2d6a4f;
+    --green-light: #52b788;
+    --green-pale: #d8f3dc;
+    --red: #e76f51;
+    --gray: #6c757d;
+    --bg: #f8faf9;
+    --card: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --text-muted: #6c757d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: var(--green); color: white; padding: 18px 24px; display: flex; align-items: center; gap: 14px; }
+  header h1 { font-size: 1.2rem; font-weight: 700; margin-bottom: 2px; }
+  header p  { font-size: 0.76rem; opacity: 0.8; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+
+  .steps { display: flex; margin-bottom: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .step-btn { flex: 1; padding: 13px 8px; text-align: center; cursor: pointer; border: none; background: transparent; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; border-right: 1px solid var(--border); }
+  .step-btn:last-child { border-right: none; }
+  .step-btn.active { background: var(--green); color: white; }
+  .step-btn.done   { background: var(--green-pale); color: var(--green); }
+  .step-btn .num   { display: block; font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; color: var(--green); }
+  .card .subtitle { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px; }
+
+  .field label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 13px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none; }
+  .field input:focus { border-color: var(--green-light); }
+
+  .hours-tracker { background: var(--green-pale); border-radius: 10px; padding: 12px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 10; }
+  .hours-tracker .label { font-size: 0.83rem; font-weight: 600; color: var(--green); white-space: nowrap; }
+  .hours-tracker .bar-wrap { flex: 1; height: 10px; background: rgba(0,0,0,0.1); border-radius: 5px; overflow: hidden; }
+  .hours-tracker .bar { height: 100%; background: var(--green); border-radius: 5px; transition: width 0.3s; }
+  .hours-tracker .bar.over { background: var(--red); }
+  .hours-tracker .count { font-size: 1rem; font-weight: 700; color: var(--green); min-width: 70px; text-align: right; }
+  .hours-tracker .count.over { color: var(--red); }
+
+  .profile-wrap { margin-bottom: 14px; }
+  .profile-wrap .hint { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 9px; }
+  .profile-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+  .ppill { padding: 7px 13px; border: 1.5px solid var(--green); border-radius: 99px; background: white; color: var(--green); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .ppill:hover, .ppill.active { background: var(--green); color: white; }
+  .ppill-clear { border-color: var(--gray); color: var(--gray); }
+  .ppill-clear:hover { background: var(--gray); color: white; }
+  .profile-loaded { font-size: 0.76rem; color: var(--green); margin-top: 7px; display: none; }
+
+  /* Collapsible category */
+  .cat-section { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .cat-toggle { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: #f7faf8; cursor: pointer; border: none; width: 100%; text-align: left; }
+  .cat-toggle:hover { background: var(--green-pale); }
+  .cat-toggle h3 { font-size: 0.92rem; font-weight: 700; color: var(--green); }
+  .cat-toggle .cat-count { font-size: 0.72rem; color: var(--text-muted); margin-left: 4px; }
+  .cat-toggle .cat-ghg-badge { margin-left: auto; font-size: 0.72rem; color: var(--text-muted); }
+  .cat-toggle .chevron { margin-left: 8px; font-size: 0.8rem; transition: transform 0.2s; }
+  .cat-toggle.open .chevron { transform: rotate(180deg); }
+  .cat-body { display: none; padding: 4px 14px 10px; }
+  .cat-body.open { display: block; }
+
+  /* Activity rows */
+  .act-row { display: grid; grid-template-columns: 1fr 70px auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+  .act-row:last-child { border-bottom: none; }
+  .act-name { font-size: 0.84rem; line-height: 1.3; }
+  .act-badge-wrap { text-align: center; }
+  .ibadge { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 0.67rem; font-weight: 700; }
+  .b-low   { background: #d8f3dc; color: #1b4332; }
+  .b-med   { background: #fff3cd; color: #856404; }
+  .b-high  { background: #ffe5d0; color: #7d3300; }
+  .b-xhigh { background: #fce4e4; color: #7f1d1d; }
+
+  .level-btns { display: flex; gap: 3px; }
+  .lbtn {
+    padding: 5px 9px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    color: var(--text-muted);
+    font-size: 0.73rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .lbtn:hover { border-color: var(--green); color: var(--green); }
+  .lbtn.sel   { background: var(--green); border-color: var(--green); color: white; }
+  .lbtn .lh   { display: block; font-size: 0.62rem; font-weight: 400; opacity: 0.85; margin-top: 1px; }
+
+  .btn { padding: 11px 26px; border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-secondary { background: var(--green-pale); color: var(--green); }
+  .btn-save { background: #1a73e8; color: white; }
+  .btn-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+
+  .result-hero { background: linear-gradient(135deg, var(--green), #40916c); color: white; border-radius: 12px; padding: 26px; text-align: center; margin-bottom: 18px; }
+  .result-hero .rl { font-size: 0.88rem; opacity: 0.85; margin-bottom: 6px; }
+  .result-hero .rv { font-size: 3rem; font-weight: 800; letter-spacing: -1px; }
+  .result-hero .ru { font-size: 0.9rem; opacity: 0.8; }
+  .result-hero .rc { margin-top: 12px; font-size: 0.83rem; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 9px 14px; }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+  .rcat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; }
+  .rcat .rch { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+  .rcat h4 { font-size: 0.83rem; font-weight: 700; }
+  .rcat .rcv { font-size: 1.35rem; font-weight: 800; color: var(--green); }
+  .rcat .rcu { font-size: 0.72rem; color: var(--text-muted); }
+  .rcat .rcbw { height: 5px; background: var(--green-pale); border-radius: 3px; margin-top: 7px; overflow: hidden; }
+  .rcat .rcb  { height: 100%; background: var(--green); border-radius: 3px; }
+  .top-list { list-style: none; }
+  .top-list li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
+  .top-list li:last-child { border-bottom: none; }
+  .top-rank { font-size: 0.72rem; font-weight: 700; background: var(--green-pale); color: var(--green); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .top-name { flex: 1; }
+  .top-val { font-weight: 700; color: var(--green); }
+
+  .config-box { background: #fffbf0; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; font-size: 0.84rem; }
+  .config-box strong { display: block; margin-bottom: 7px; color: #92400e; }
+  .config-box input { width: 100%; padding: 8px 12px; border: 1px solid #fde68a; border-radius: 6px; font-size: 0.82rem; font-family: monospace; margin-top: 5px; }
+  .save-status { margin-top: 12px; padding: 11px 14px; border-radius: 8px; font-size: 0.84rem; display: none; }
+  .save-status.ok      { background: var(--green-pale); color: var(--green); display: block; }
+  .save-status.err     { background: #fce4e4; color: #7f1d1d; display: block; }
+  .save-status.loading { background: #f0f0f0; color: var(--gray); display: block; }
+
+  .ref-note { font-size: 0.73rem; color: var(--text-muted); border-left: 3px solid var(--green-pale); padding: 7px 11px; margin-top: 18px; line-height: 1.5; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  @media (max-width: 600px) {
+    .result-grid { grid-template-columns: 1fr; }
+    .act-row { grid-template-columns: 1fr auto; }
+    .act-badge-wrap { display: none; }
+    .lbtn .lh { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🌿 Calculadora de Huella de Carbono — 85 Actividades</h1>
+    <p>Basada en Jiang et al. (2023) · STULA Cuestionario B · Environmental Science and Pollution Research</p>
+  </div>
+</header>
+
+<div class="container">
+  <div class="steps">
+    <button class="step-btn active" onclick="goTo(0)"><span class="num">1</span>Perfil</button>
+    <button class="step-btn" onclick="goTo(1)"><span class="num">2</span>Actividades</button>
+    <button class="step-btn" onclick="goTo(2)"><span class="num">3</span>Resultados</button>
+    <button class="step-btn" onclick="goTo(3)"><span class="num">4</span>Guardar</button>
+  </div>
+
+  <!-- PAGE 0: Perfil -->
+  <div class="page active" id="page-0">
+    <div class="card">
+      <h2>👤 Datos del participante</h2>
+      <p class="subtitle">Ingresa tu nombre o código para identificar el registro.</p>
+      <div class="field">
+        <label>Nombre / Código</label>
+        <input type="text" id="f-name" placeholder="ej. Participante 1">
+      </div>
+      <div class="ref-note">⚠️ Las intensidades de GHG están basadas en datos de hogares japoneses (Jiang et al. 2023). Se usan como referencia orientativa para estimar emisiones relativas entre actividades.</div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="goTo(1)">Siguiente → Actividades</button></div>
+    </div>
+  </div>
+
+  <!-- PAGE 1: Actividades -->
+  <div class="page" id="page-1">
+    <div class="card">
+      <h2>⏱️ ¿Cómo usaste tu tiempo ayer?</h2>
+      <p class="subtitle">Marca el nivel para cada actividad. Las 85 categorías cubren las 24 horas del día.</p>
+
+      <div class="profile-wrap">
+        <div class="hint">💡 Carga un perfil de arranque y ajusta lo que difiera:</div>
+        <div class="profile-pills">
+          <button class="ppill" onclick="applyProfile('student')">📚 Estudiante</button>
+          <button class="ppill" onclick="applyProfile('office')">💼 Trabajador/a oficina</button>
+          <button class="ppill" onclick="applyProfile('wfh')">🏠 Trabajo en casa</button>
+          <button class="ppill" onclick="applyProfile('weekend')">🎉 Fin de semana</button>
+          <button class="ppill" onclick="applyProfile('rest')">😴 Descanso</button>
+          <button class="ppill ppill-clear" onclick="clearAll()">✕ Limpiar</button>
+        </div>
+        <div class="profile-loaded" id="profile-loaded"></div>
+      </div>
+
+      <div class="hours-tracker">
+        <div class="label">Horas asignadas</div>
+        <div class="bar-wrap"><div class="bar" id="hours-bar" style="width:0%"></div></div>
+        <div class="count" id="hours-count">0 / 24 h</div>
+      </div>
+
+      <div id="acts-container"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo(0)">← Atrás</button>
+        <button class="btn btn-primary" onclick="calculate()">Calcular huella →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: Resultados -->
+  <div class="page" id="page-2">
+    <div class="result-hero">
+      <div class="rl">Tu huella de carbono diaria estimada</div>
+      <div class="rv" id="r-total">—</div>
+      <div class="ru">kgCO₂e / día</div>
+      <div class="rc" id="r-cmp"></div>
+    </div>
+    <div class="result-grid" id="r-cats"></div>
+    <div class="card">
+      <h2>🔝 Top 10 actividades más emisoras</h2>
+      <p class="subtitle">Mayor emisión total en tu día (intensidad × tiempo).</p>
+      <ul class="top-list" id="r-top"></ul>
+    </div>
+    <div class="card">
+      <h2>💡 Potencial de mitigación</h2>
+      <p class="subtitle">Reducciones estimadas según estrategias del paper.</p>
+      <div id="r-mitigation"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(1)">← Editar</button>
+      <button class="btn btn-primary" onclick="goTo(3)">Guardar en Sheets →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3: Guardar -->
+  <div class="page" id="page-3">
+    <div class="card">
+      <h2>☁️ Guardar en Google Sheets</h2>
+      <p class="subtitle">Conecta con tu hoja de cálculo para almacenar el registro.</p>
+      <div class="config-box">
+        <strong>🔗 URL del Google Apps Script Web App</strong>
+        Pega la URL de tu script desplegado:
+        <input type="text" id="f-script-url" placeholder="https://script.google.com/macros/s/XXXXXXXXXX/exec">
+      </div>
+      <div style="margin-bottom:14px">
+        <strong style="font-size:0.88rem">Resumen del registro:</strong>
+        <div id="save-preview" style="font-size:0.82rem; color:var(--text-muted); margin-top:7px; line-height:1.8;"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo(2)">← Resultados</button>
+        <button class="btn btn-save" onclick="saveToSheets()">💾 Guardar en Sheets</button>
+      </div>
+      <div class="save-status" id="save-status"></div>
+    </div>
+    <div class="card">
+      <h2>⚙️ Código para Google Apps Script</h2>
+      <p class="subtitle">Copia en script.google.com → despliega como Web App (acceso: Cualquier persona).</p>
+      <pre id="apps-script-code" style="background:#f4f4f4; padding:14px; border-radius:8px; font-size:0.73rem; overflow-x:auto; line-height:1.5; white-space:pre; color:#1a1a1a;"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── 85 Actividades — STULA Cuestionario B (Jiang et al. 2023) ───────────────
+// ghg = intensidad GHG (kgCO₂e/h/cap); poco/normal/mucho = horas típicas
+// Valores de intensidad: conocidos del paper (texto + figuras) o estimados por
+// analogía usando los promedios de categoría reportados.
+const ACTIVITIES = [
+  {
+    key: 'trabajo',
+    label: '💼 Trabajo Remunerado',
+    acts: [
+      { id:'mainjob',        label:'Trabajo principal',                 ghg:0.04, b:'b-low',   poco:2,    normal:8,    mucho:12  },
+      { id:'trip_mainjob',   label:'Traslados durante trabajo principal',ghg:2.00, b:'b-med',   poco:0.25, normal:0.5,  mucho:1.5 },
+      { id:'sidejob',        label:'Trabajo secundario / extra',         ghg:0.04, b:'b-low',   poco:0.5,  normal:2,    mucho:4   },
+      { id:'trip_sidejob',   label:'Traslados durante trabajo secundario',ghg:2.00, b:'b-med',  poco:0.25, normal:0.5,  mucho:1   },
+      { id:'commute_work',   label:'Traslado al trabajo',                ghg:1.50, b:'b-med',   poco:0.25, normal:1,    mucho:2   },
+      { id:'rest_work',      label:'Descanso en el trabajo',             ghg:0.04, b:'b-low',   poco:0.25, normal:0.5,  mucho:1   },
+      { id:'jobhunting',     label:'Búsqueda de empleo',                 ghg:1.00, b:'b-med',   poco:0.5,  normal:2,    mucho:4   },
+    ]
+  },
+  {
+    key: 'hogar',
+    label: '🏠 Tareas del Hogar',
+    acts: [
+      { id:'meals_mgmt',     label:'Preparación de alimentos (cocinar)',  ghg:2.52, b:'b-high',  poco:0.5,  normal:1,    mucho:2   },
+      { id:'dessert',        label:'Elaboración de postres',              ghg:2.00, b:'b-high',  poco:0.25, normal:1,    mucho:2   },
+      { id:'gardening',      label:'Jardinería',                          ghg:0.80, b:'b-med',   poco:0.25, normal:0.5,  mucho:2   },
+      { id:'house_maint',    label:'Mantenimiento del hogar',             ghg:1.20, b:'b-med',   poco:0.25, normal:1,    mucho:3   },
+      { id:'clothes_maint',  label:'Cuidado de ropa (lavado, planchado)', ghg:1.00, b:'b-med',   poco:0.25, normal:0.5,  mucho:1.5 },
+      { id:'clothes_making', label:'Confección de ropa',                  ghg:0.80, b:'b-med',   poco:0.25, normal:1,    mucho:3   },
+      { id:'building',       label:'Construcción / reparaciones en casa', ghg:1.00, b:'b-med',   poco:0.25, normal:1,    mucho:3   },
+      { id:'vehicle_maint',  label:'Mantenimiento de vehículos',          ghg:1.50, b:'b-med',   poco:0.25, normal:1,    mucho:2   },
+      { id:'home_mgmt',      label:'Gestión del hogar (trámites, admin)', ghg:0.50, b:'b-low',   poco:0.25, normal:0.5,  mucho:1   },
+      { id:'family_care',    label:'Cuidado de familiares',               ghg:1.50, b:'b-med',   poco:0.25, normal:1,    mucho:3   },
+      { id:'family_support', label:'Apoyo a familiares',                  ghg:1.00, b:'b-med',   poco:0.25, normal:1,    mucho:2   },
+      { id:'other_house',    label:'Otras tareas del hogar',              ghg:1.00, b:'b-med',   poco:0.25, normal:0.5,  mucho:1   },
+      { id:'baby_nursing',   label:'Lactancia / amamantamiento',          ghg:7.87, b:'b-xhigh', poco:0.5,  normal:2,    mucho:6   },
+      { id:'baby_care',      label:'Cuidado de bebés',                    ghg:2.00, b:'b-high',  poco:0.5,  normal:2,    mucho:5   },
+      { id:'play_babies',    label:'Jugar con bebés',                     ghg:1.00, b:'b-med',   poco:0.25, normal:1,    mucho:3   },
+      { id:'accomp_child',   label:'Acompañar a hijos (actividades)',     ghg:3.00, b:'b-high',  poco:0.25, normal:1,    mucho:2   },
+      { id:'child_edu',      label:'Educación de hijos en casa',          ghg:1.00, b:'b-med',   poco:0.25, normal:1,    mucho:2   },
+      { id:'accomp_school',  label:'Llevar/traer hijos a la escuela',     ghg:6.29, b:'b-xhigh', poco:0.25, normal:0.5,  mucho:1.5 },
+      { id:'shopping',       label:'Compras',                             ghg:2.00, b:'b-high',  poco:0.25, normal:1,    mucho:2   },
+      { id:'admin_svc',      label:'Servicios administrativos (banco, correo)', ghg:1.00, b:'b-med', poco:0.5, normal:1, mucho:2  },
+      { id:'commercial_svc', label:'Servicios comerciales (lavandería, etc.)',  ghg:4.52, b:'b-xhigh', poco:0.25, normal:0.5, mucho:1.5 },
+      { id:'trip_house',     label:'Traslados para tareas del hogar',     ghg:3.54, b:'b-high',  poco:0.25, normal:0.5,  mucho:1.5 },
+      { id:'volunteer',      label:'Voluntariado',                        ghg:0.80, b:'b-low',   poco:0.5,  normal:2,    mucho:6   },
+      { id:'trip_volunteer', label:'Traslados para voluntariado',         ghg:2.50, b:'b-high',  poco:0.25, normal:0.5,  mucho:1.5 },
+    ]
+  },
+  {
+    key: 'estudio',
+    label: '📚 Estudio / Trabajo Académico',
+    acts: [
+      { id:'classes',       label:'Clases y actividades escolares',       ghg:1.51, b:'b-med',  poco:2,   normal:5,   mucho:8  },
+      { id:'homework',      label:'Tarea / deberes',                      ghg:0.50, b:'b-low',  poco:0.5, normal:1.5, mucho:4  },
+      { id:'tutoring',      label:'Clases particulares / academia',       ghg:1.00, b:'b-med',  poco:0.5, normal:1.5, mucho:3  },
+      { id:'school_rest',   label:'Recreo / descanso escolar',            ghg:0.50, b:'b-low',  poco:0.25,normal:0.5, mucho:1  },
+      { id:'commute_school',label:'Traslado a la escuela',                ghg:1.00, b:'b-med',  poco:0.25,normal:0.5, mucho:1.5},
+      { id:'self_study',    label:'Estudio e investigación extracurricular',ghg:0.50,b:'b-low',  poco:0.5, normal:2,   mucho:4  },
+    ]
+  },
+  {
+    key: 'personal',
+    label: '🛁 Cuidado Personal',
+    acts: [
+      { id:'sleep',          label:'Dormir (sueño nocturno)',             ghg:0.02, b:'b-low',   poco:5,   normal:7.5, mucho:10 },
+      { id:'nap',            label:'Siesta',                              ghg:0.02, b:'b-low',   poco:0.25,normal:0.5, mucho:1.5},
+      { id:'medical_treat',  label:'Tratamiento médico',                  ghg:5.00, b:'b-xhigh', poco:0.5, normal:1.5, mucho:4  },
+      { id:'medical_exam',   label:'Examen / chequeo médico',             ghg:7.50, b:'b-xhigh', poco:0.5, normal:1,   mucho:3  },
+      { id:'bathing',        label:'Baño / ducha',                        ghg:3.35, b:'b-high',  poco:0.25,normal:0.5, mucho:1  },
+      { id:'personal_care',  label:'Aseo e higiene personal',             ghg:1.00, b:'b-med',   poco:0.25,normal:0.5, mucho:1  },
+      { id:'personal_svc',   label:'Servicios de cuidado personal (peluquería, etc.)', ghg:3.00, b:'b-high', poco:0.25,normal:1,mucho:3 },
+      { id:'breakfast',      label:'Desayuno',                            ghg:1.51, b:'b-med',   poco:0.25,normal:0.5, mucho:1  },
+      { id:'lunch',          label:'Almuerzo',                            ghg:1.64, b:'b-med',   poco:0.25,normal:0.5, mucho:1.5},
+      { id:'dinner',         label:'Cena',                                ghg:1.63, b:'b-med',   poco:0.5, normal:1,   mucho:1.5},
+      { id:'late_snack',     label:'Merienda nocturna / snack',           ghg:1.20, b:'b-med',   poco:0.25,normal:0.5, mucho:1  },
+      { id:'light_meals',    label:'Refrigerios y comidas ligeras',       ghg:1.20, b:'b-med',   poco:0.25,normal:0.5, mucho:1  },
+    ]
+  },
+  {
+    key: 'libre',
+    label: '🎮 Tiempo Libre',
+    acts: [
+      { id:'social_act',     label:'Actividades sociales (asociaciones)', ghg:2.30, b:'b-high',  poco:0.5, normal:1.5, mucho:4  },
+      { id:'worship',        label:'Culto / rezo / meditación religiosa', ghg:0.50, b:'b-low',   poco:0.25,normal:0.5, mucho:2  },
+      { id:'ceremony',       label:'Ocasiones ceremoniales (bodas, funerales)', ghg:2.00, b:'b-high', poco:1, normal:3, mucho:8 },
+      { id:'socializing',    label:'Socialización cara a cara',           ghg:1.50, b:'b-med',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'family_comm',    label:'Comunicación familiar',               ghg:0.50, b:'b-low',   poco:0.25,normal:0.5, mucho:1.5},
+      { id:'phone_call',     label:'Conversación telefónica',             ghg:0.30, b:'b-low',   poco:0.25,normal:0.5, mucho:1  },
+      { id:'email_comm',     label:'Comunicación por correo electrónico', ghg:0.30, b:'b-low',   poco:0.25,normal:0.5, mucho:1  },
+      { id:'mail_comm',      label:'Correspondencia postal',              ghg:0.50, b:'b-low',   poco:0.25,normal:0.5, mucho:1  },
+      { id:'entertainment',  label:'Entretenimiento y recreación',        ghg:1.00, b:'b-med',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'art_creation',   label:'Creación artística',                  ghg:0.80, b:'b-low',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'sweet_making',   label:'Repostería como hobby',               ghg:1.50, b:'b-med',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'productive_hob', label:'Actividades productivas (hobby)',     ghg:0.80, b:'b-low',   poco:0.5, normal:1.5, mucho:3  },
+      { id:'gardening_hob',  label:'Jardinería como hobby',               ghg:0.80, b:'b-low',   poco:0.25,normal:1,   mucho:3  },
+      { id:'pet_care',       label:'Cuidado de mascotas',                 ghg:1.00, b:'b-med',   poco:0.25,normal:0.5, mucho:1.5},
+      { id:'dog_walk',       label:'Pasear al perro',                     ghg:0.80, b:'b-low',   poco:0.25,normal:0.5, mucho:1.5},
+      { id:'clothes_hob',    label:'Costura / confección como hobby',     ghg:0.50, b:'b-low',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'hobbies',        label:'Aficiones / pasatiempos diversos',    ghg:1.00, b:'b-med',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'gaming',         label:'Videojuegos',                         ghg:0.40, b:'b-low',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'drive_pleasure', label:'Conducir por placer',                 ghg:5.18, b:'b-xhigh', poco:0.5, normal:1.5, mucho:3  },
+      { id:'other_hobbies',  label:'Otros hobbies',                       ghg:0.80, b:'b-low',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'aerobic',        label:'Deportes aeróbicos (correr, ciclismo)', ghg:0.50, b:'b-low', poco:0.5, normal:1.5, mucho:3  },
+      { id:'ball_games',     label:'Deportes de pelota (fútbol, tenis)',  ghg:0.80, b:'b-low',   poco:0.5, normal:1.5, mucho:3  },
+      { id:'water_sports',   label:'Deportes acuáticos',                  ghg:1.00, b:'b-med',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'prod_sports',    label:'Deportes productivos (pesca, caza)',  ghg:0.80, b:'b-low',   poco:0.5, normal:1.5, mucho:3  },
+      { id:'other_sports',   label:'Otros deportes',                      ghg:0.80, b:'b-low',   poco:0.5, normal:1.5, mucho:3  },
+      { id:'read_books',     label:'Lectura de libros',                   ghg:0.16, b:'b-low',   poco:0.25,normal:0.5, mucho:2  },
+      { id:'read_news',      label:'Lectura de periódicos / revistas',    ghg:0.58, b:'b-low',   poco:0.25,normal:0.5, mucho:1.5},
+      { id:'watch_tv',       label:'Ver televisión',                      ghg:0.32, b:'b-low',   poco:0.5, normal:2,   mucho:5  },
+      { id:'watch_video',    label:'Ver videos / DVDs / streaming',       ghg:0.80, b:'b-low',   poco:0.5, normal:1.5, mucho:4  },
+      { id:'listen_radio',   label:'Escuchar la radio',                   ghg:0.20, b:'b-low',   poco:0.25,normal:0.5, mucho:2  },
+      { id:'listen_music',   label:'Escuchar música / grabaciones',       ghg:0.30, b:'b-low',   poco:0.25,normal:0.5, mucho:2  },
+      { id:'resting',        label:'Descanso / relajación (sin dormir)',  ghg:0.15, b:'b-low',   poco:0.5, normal:1,   mucho:3  },
+      // 2 more to reach 35 free-time activities:
+      // The paper lists "sweet-making" and "productive" as separate from hobbies —
+      // already included above. The 35th activity for free time mapped here is resting.
+      // Total: social_act, worship, ceremony, socializing, family_comm, phone_call,
+      // email_comm, mail_comm, entertainment, art_creation, sweet_making, productive_hob,
+      // gardening_hob, pet_care, dog_walk, clothes_hob, hobbies, gaming, drive_pleasure,
+      // other_hobbies, aerobic, ball_games, water_sports, prod_sports, other_sports,
+      // read_books, read_news, watch_tv, watch_video, listen_radio, listen_music,
+      // resting  → 32 here + 3 trip activities in "Other" category = 35 paper total
+    ]
+  },
+  {
+    key: 'otros',
+    label: '🚗 Otros',
+    acts: [
+      { id:'trip_hobbies',   label:'Traslados para hobbies',              ghg:3.52, b:'b-high',  poco:0.25,normal:1,   mucho:3  },
+      { id:'other_trips',    label:'Otros traslados',                     ghg:3.31, b:'b-high',  poco:0.5, normal:1.5, mucho:4  },
+      { id:'stula_act',      label:'Actividades propias del estudio / encuesta', ghg:0.63, b:'b-low', poco:0.25, normal:0.5, mucho:2 },
+      { id:'other_act',      label:'Otras actividades no clasificadas',   ghg:0.63, b:'b-low',   poco:0.25,normal:0.5, mucho:2  },
+    ]
+  },
+];
+
+// Badge class by GHG intensity
+function ghgBadge(ghg) {
+  if (ghg < 0.5)  return { cls:'b-low',   label:'Baja' };
+  if (ghg < 2.0)  return { cls:'b-med',   label:'Media' };
+  if (ghg < 4.0)  return { cls:'b-high',  label:'Alta' };
+  return               { cls:'b-xhigh', label:'Muy alta' };
+}
+
+// State
+const actValues = {};
+
+// ─── Profiles (hours per activity id, total ≈ 24h) ────────────────────────────
+const PROFILES = {
+  student: {
+    label: '📚 Estudiante',
+    v: {
+      sleep:8, nap:0, medical_treat:0, medical_exam:0, bathing:0.5, personal_care:0.5,
+      personal_svc:0, breakfast:0.5, lunch:0.5, dinner:0.75, late_snack:0, light_meals:0.25,
+      mainjob:0, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:0, rest_work:0, jobhunting:0,
+      meals_mgmt:0.25, dessert:0, gardening:0, house_maint:0, clothes_maint:0.25, clothes_making:0,
+      building:0, vehicle_maint:0, home_mgmt:0, family_care:0, family_support:0, other_house:0,
+      baby_nursing:0, baby_care:0, play_babies:0, accomp_child:0, child_edu:0, accomp_school:0,
+      shopping:0.25, admin_svc:0, commercial_svc:0, trip_house:0.25, volunteer:0, trip_volunteer:0,
+      classes:6, homework:2, tutoring:0, school_rest:0.5, commute_school:1, self_study:1,
+      social_act:0, worship:0, ceremony:0, socializing:0.5, family_comm:0.25, phone_call:0.25,
+      email_comm:0.25, mail_comm:0, entertainment:0, art_creation:0, sweet_making:0,
+      productive_hob:0, gardening_hob:0, pet_care:0, dog_walk:0, clothes_hob:0, hobbies:0.25,
+      gaming:0.5, drive_pleasure:0, other_hobbies:0, aerobic:0, ball_games:0.25, water_sports:0,
+      prod_sports:0, other_sports:0, read_books:0.25, read_news:0, watch_tv:1, watch_video:0,
+      listen_radio:0, listen_music:0.25, resting:0.25,
+      trip_hobbies:0, other_trips:0, stula_act:0, other_act:0.25
+    }
+  },
+  office: {
+    label: '💼 Trabajador/a de oficina',
+    v: {
+      sleep:7.5, nap:0, medical_treat:0, medical_exam:0, bathing:0.5, personal_care:0.5,
+      personal_svc:0, breakfast:0.5, lunch:0.5, dinner:1, late_snack:0, light_meals:0,
+      mainjob:8, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:1.5, rest_work:0.5, jobhunting:0,
+      meals_mgmt:0.5, dessert:0, gardening:0, house_maint:0, clothes_maint:0.25, clothes_making:0,
+      building:0, vehicle_maint:0, home_mgmt:0.25, family_care:0, family_support:0, other_house:0.25,
+      baby_nursing:0, baby_care:0, play_babies:0, accomp_child:0, child_edu:0, accomp_school:0,
+      shopping:0.25, admin_svc:0, commercial_svc:0, trip_house:0.25, volunteer:0, trip_volunteer:0,
+      classes:0, homework:0, tutoring:0, school_rest:0, commute_school:0, self_study:0,
+      social_act:0, worship:0, ceremony:0, socializing:0.25, family_comm:0.25, phone_call:0.25,
+      email_comm:0.25, mail_comm:0, entertainment:0, art_creation:0, sweet_making:0,
+      productive_hob:0, gardening_hob:0, pet_care:0, dog_walk:0, clothes_hob:0, hobbies:0,
+      gaming:0, drive_pleasure:0, other_hobbies:0, aerobic:0, ball_games:0, water_sports:0,
+      prod_sports:0, other_sports:0, read_books:0.25, read_news:0.25, watch_tv:1.5, watch_video:0,
+      listen_radio:0, listen_music:0, resting:0.25,
+      trip_hobbies:0, other_trips:0.25, stula_act:0, other_act:0
+    }
+  },
+  wfh: {
+    label: '🏠 Trabajo desde casa',
+    v: {
+      sleep:7.5, nap:0, medical_treat:0, medical_exam:0, bathing:0.5, personal_care:0.5,
+      personal_svc:0, breakfast:0.5, lunch:0.5, dinner:1, late_snack:0, light_meals:0.25,
+      mainjob:8, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:0, rest_work:0.5, jobhunting:0,
+      meals_mgmt:1, dessert:0, gardening:0, house_maint:0, clothes_maint:0.25, clothes_making:0,
+      building:0, vehicle_maint:0, home_mgmt:0.25, family_care:0.25, family_support:0, other_house:0.25,
+      baby_nursing:0, baby_care:0, play_babies:0, accomp_child:0, child_edu:0, accomp_school:0,
+      shopping:0.25, admin_svc:0, commercial_svc:0, trip_house:0, volunteer:0, trip_volunteer:0,
+      classes:0, homework:0, tutoring:0, school_rest:0, commute_school:0, self_study:0,
+      social_act:0, worship:0, ceremony:0, socializing:0, family_comm:0.5, phone_call:0.25,
+      email_comm:0.5, mail_comm:0, entertainment:0, art_creation:0, sweet_making:0,
+      productive_hob:0, gardening_hob:0, pet_care:0, dog_walk:0, clothes_hob:0, hobbies:0,
+      gaming:0, drive_pleasure:0, other_hobbies:0, aerobic:0.5, ball_games:0, water_sports:0,
+      prod_sports:0, other_sports:0, read_books:0.25, read_news:0.25, watch_tv:1, watch_video:0,
+      listen_radio:0, listen_music:0, resting:0.25,
+      trip_hobbies:0, other_trips:0, stula_act:0, other_act:0.25
+    }
+  },
+  weekend: {
+    label: '🎉 Fin de semana activo',
+    v: {
+      sleep:8.5, nap:0, medical_treat:0, medical_exam:0, bathing:0.75, personal_care:0.5,
+      personal_svc:0, breakfast:0.5, lunch:0.75, dinner:1.25, late_snack:0, light_meals:0.25,
+      mainjob:0, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:0, rest_work:0, jobhunting:0,
+      meals_mgmt:1.5, dessert:0, gardening:0.5, house_maint:0.5, clothes_maint:0.25, clothes_making:0,
+      building:0, vehicle_maint:0, home_mgmt:0, family_care:0, family_support:0, other_house:0.25,
+      baby_nursing:0, baby_care:0, play_babies:0, accomp_child:0, child_edu:0, accomp_school:0,
+      shopping:1, admin_svc:0, commercial_svc:0, trip_house:0.5, volunteer:0, trip_volunteer:0,
+      classes:0, homework:0, tutoring:0, school_rest:0, commute_school:0, self_study:0,
+      social_act:0, worship:0, ceremony:0, socializing:1.5, family_comm:0.5, phone_call:0.25,
+      email_comm:0, mail_comm:0, entertainment:0.5, art_creation:0, sweet_making:0,
+      productive_hob:0, gardening_hob:0, pet_care:0, dog_walk:0, clothes_hob:0, hobbies:0.5,
+      gaming:0, drive_pleasure:0.5, other_hobbies:0, aerobic:1, ball_games:0.5, water_sports:0,
+      prod_sports:0, other_sports:0, read_books:0, read_news:0.25, watch_tv:1.5, watch_video:0.5,
+      listen_radio:0, listen_music:0.25, resting:0.5,
+      trip_hobbies:0.25, other_trips:0.5, stula_act:0, other_act:0
+    }
+  },
+  rest: {
+    label: '😴 Día de descanso',
+    v: {
+      sleep:9, nap:1, medical_treat:0, medical_exam:0, bathing:0.75, personal_care:0.5,
+      personal_svc:0, breakfast:0.5, lunch:0.75, dinner:1, late_snack:0.25, light_meals:0.25,
+      mainjob:0, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:0, rest_work:0, jobhunting:0,
+      meals_mgmt:1.5, dessert:0, gardening:0, house_maint:0.5, clothes_maint:0.5, clothes_making:0,
+      building:0, vehicle_maint:0, home_mgmt:0.25, family_care:0, family_support:0, other_house:0.25,
+      baby_nursing:0, baby_care:0, play_babies:0, accomp_child:0, child_edu:0, accomp_school:0,
+      shopping:0.5, admin_svc:0, commercial_svc:0, trip_house:0.25, volunteer:0, trip_volunteer:0,
+      classes:0, homework:0, tutoring:0, school_rest:0, commute_school:0, self_study:0,
+      social_act:0, worship:0, ceremony:0, socializing:0.5, family_comm:0.5, phone_call:0.25,
+      email_comm:0.25, mail_comm:0, entertainment:0, art_creation:0, sweet_making:0,
+      productive_hob:0, gardening_hob:0, pet_care:0, dog_walk:0, clothes_hob:0, hobbies:0,
+      gaming:0, drive_pleasure:0, other_hobbies:0, aerobic:0, ball_games:0, water_sports:0,
+      prod_sports:0, other_sports:0, read_books:0.5, read_news:0.5, watch_tv:3, watch_video:0.5,
+      listen_radio:0.25, listen_music:0, resting:1,
+      trip_hobbies:0, other_trips:0, stula_act:0, other_act:0.25
+    }
+  }
+};
+
+// ─── Build UI ─────────────────────────────────────────────────────────────────
+function buildActivities() {
+  const container = document.getElementById('acts-container');
+  container.innerHTML = '';
+
+  let actNum = 0;
+
+  ACTIVITIES.forEach(cat => {
+    const section = document.createElement('div');
+    section.className = 'cat-section';
+
+    const toggle = document.createElement('button');
+    toggle.className = 'cat-toggle open';
+    toggle.innerHTML = `
+      <h3>${cat.label}</h3>
+      <span class="cat-count">(${cat.acts.length} actividades)</span>
+      <span class="cat-ghg-badge" id="cat-ghg-${cat.key}">0.00 kgCO₂e</span>
+      <span class="chevron">▲</span>`;
+    toggle.onclick = () => {
+      const body = section.querySelector('.cat-body');
+      const open = body.classList.toggle('open');
+      toggle.classList.toggle('open', open);
+    };
+
+    const body = document.createElement('div');
+    body.className = 'cat-body open';
+
+    cat.acts.forEach(act => {
+      actNum++;
+      const badge = ghgBadge(act.ghg);
+      const row = document.createElement('div');
+      row.className = 'act-row';
+      row.innerHTML = `
+        <div class="act-name"><span style="color:var(--text-muted);font-size:0.75rem;margin-right:5px;min-width:22px;display:inline-block">${actNum}.</span>${act.label}</div>
+        <div class="act-badge-wrap">
+          <span class="ibadge ${badge.cls}">${act.ghg.toFixed(2)}</span>
+          <div style="font-size:0.62rem;color:var(--text-muted);margin-top:2px">kgCO₂e/h</div>
+        </div>
+        <div class="level-btns">
+          <button class="lbtn" id="lbtn-${act.id}-0" onclick="setLevel('${act.id}',0,${act.poco})">
+            Poco<span class="lh">${act.poco}h</span>
+          </button>
+          <button class="lbtn" id="lbtn-${act.id}-1" onclick="setLevel('${act.id}',1,${act.normal})">
+            Normal<span class="lh">${act.normal}h</span>
+          </button>
+          <button class="lbtn" id="lbtn-${act.id}-2" onclick="setLevel('${act.id}',2,${act.mucho})">
+            Mucho<span class="lh">${act.mucho}h</span>
+          </button>
+        </div>`;
+      body.appendChild(row);
+    });
+
+    section.appendChild(toggle);
+    section.appendChild(body);
+    container.appendChild(section);
+  });
+}
+
+function setLevel(id, level, hours) {
+  actValues[id] = hours;
+  for (let i = 0; i < 3; i++) {
+    const btn = document.getElementById(`lbtn-${id}-${i}`);
+    if (btn) btn.classList.toggle('sel', i === level);
+  }
+  updateTracker();
+  updateCatGhg();
+}
+
+function setLevelSilent(id, hours) {
+  actValues[id] = hours;
+  // Find the activity
+  let act = null;
+  for (const cat of ACTIVITIES) {
+    act = cat.acts.find(a => a.id === id);
+    if (act) break;
+  }
+  if (!act) return;
+  const levels = [act.poco, act.normal, act.mucho];
+  const closest = findClosestLevel(levels, hours);
+  for (let i = 0; i < 3; i++) {
+    const btn = document.getElementById(`lbtn-${id}-${i}`);
+    if (btn) btn.classList.toggle('sel', i === closest);
+  }
+}
+
+function findClosestLevel(levels, h) {
+  let best = 0, bestD = Infinity;
+  levels.forEach((v, i) => {
+    const d = Math.abs(v - h);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+function applyProfile(key) {
+  const p = PROFILES[key];
+  if (!p) return;
+  for (const [id, h] of Object.entries(p.v)) {
+    actValues[id] = h;
+    setLevelSilent(id, h);
+  }
+  updateTracker();
+  updateCatGhg();
+  const el = document.getElementById('profile-loaded');
+  el.textContent = `✓ Perfil cargado: ${p.label}`;
+  el.style.display = 'block';
+}
+
+function clearAll() {
+  for (const cat of ACTIVITIES) {
+    for (const act of cat.acts) {
+      actValues[act.id] = 0;
+      for (let i = 0; i < 3; i++) {
+        const btn = document.getElementById(`lbtn-${act.id}-${i}`);
+        if (btn) btn.classList.remove('sel');
+      }
+    }
+  }
+  updateTracker();
+  updateCatGhg();
+  const el = document.getElementById('profile-loaded');
+  el.style.display = 'none';
+}
+
+function updateTracker() {
+  let total = 0;
+  for (const v of Object.values(actValues)) total += (v || 0);
+  total = Math.round(total * 100) / 100;
+  const bar = document.getElementById('hours-bar');
+  const count = document.getElementById('hours-count');
+  const pct = Math.min((total / 24) * 100, 100);
+  bar.style.width = pct + '%';
+  bar.classList.toggle('over', total > 24);
+  count.textContent = total.toFixed(1) + ' / 24 h';
+  count.classList.toggle('over', total > 24);
+}
+
+function updateCatGhg() {
+  for (const cat of ACTIVITIES) {
+    let ghgSum = 0;
+    for (const act of cat.acts) {
+      ghgSum += (actValues[act.id] || 0) * act.ghg;
+    }
+    const el = document.getElementById(`cat-ghg-${cat.key}`);
+    if (el) el.textContent = ghgSum.toFixed(2) + ' kgCO₂e';
+  }
+}
+
+// ─── Calculate ────────────────────────────────────────────────────────────────
+let lastResults = null;
+
+function calculate() {
+  const catResults = {};
+  const actList = [];
+
+  for (const cat of ACTIVITIES) {
+    let catTotal = 0;
+    for (const act of cat.acts) {
+      const h = actValues[act.id] || 0;
+      const e = h * act.ghg;
+      catTotal += e;
+      actList.push({ id: act.id, label: act.label, ghg: act.ghg, h, e, catKey: cat.key });
+    }
+    catResults[cat.key] = { label: cat.label, total: catTotal };
+  }
+
+  const totalGhg = Object.values(catResults).reduce((s, c) => s + c.total, 0);
+
+  lastResults = { totalGhg, catResults, actList };
+  renderResults(lastResults);
+  goTo(2);
+}
+
+function renderResults({ totalGhg, catResults, actList }) {
+  document.getElementById('r-total').textContent = totalGhg.toFixed(2);
+
+  const jpAvg = 15.18;
+  const pct = ((totalGhg / jpAvg) * 100).toFixed(0);
+  document.getElementById('r-cmp').textContent =
+    `Promedio japonés (Jiang et al.): ${jpAvg} kgCO₂e/día · Tu huella: ${pct}% del promedio`;
+
+  // Category grid
+  const maxCat = Math.max(...Object.values(catResults).map(c => c.total));
+  const catIcons = { trabajo:'💼', hogar:'🏠', estudio:'📚', personal:'🛁', libre:'🎮', otros:'🚗' };
+  document.getElementById('r-cats').innerHTML = Object.entries(catResults).map(([k, c]) => `
+    <div class="rcat">
+      <div class="rch"><span>${catIcons[k]||'📋'}</span><h4>${c.label}</h4></div>
+      <div class="rcv">${c.total.toFixed(2)}</div>
+      <div class="rcu">kgCO₂e</div>
+      <div class="rcbw"><div class="rcb" style="width:${(c.total/Math.max(maxCat,0.01)*100).toFixed(0)}%"></div></div>
+    </div>`).join('');
+
+  // Top 10
+  const top10 = [...actList].filter(a => a.e > 0).sort((a, b) => b.e - a.e).slice(0, 10);
+  document.getElementById('r-top').innerHTML = top10.map((a, i) => `
+    <li>
+      <div class="top-rank">${i + 1}</div>
+      <div class="top-name">${a.label}</div>
+      <div class="top-val">${a.e.toFixed(2)} kg</div>
+    </li>`).join('');
+
+  // Mitigation
+  const cook = actList.find(a => a.id === 'meals_mgmt');
+  const bath = actList.find(a => a.id === 'bathing');
+  let mits = [];
+  if (cook && cook.h > 0) {
+    const sav = cook.e * 0.5;
+    mits.push(`🍳 <strong>Reducir 50% el tiempo cocinando</strong>: ahorro ≈ <strong>${sav.toFixed(2)} kgCO₂e</strong> (${((sav/totalGhg)*100).toFixed(1)}% de tu huella)`);
+  }
+  if (bath && bath.h > 0) {
+    const sav = 0.1 * bath.ghg;
+    mits.push(`🚿 <strong>Reducir 20% el tiempo de baño</strong>: ahorro ≈ <strong>${sav.toFixed(2)} kgCO₂e</strong> (${((sav/totalGhg)*100).toFixed(1)}%)`);
+  }
+  const tripActs = actList.filter(a => ['trip_hobbies','other_trips','trip_house','trip_volunteer','accomp_school','drive_pleasure'].includes(a.id) && a.h > 0);
+  if (tripActs.length > 0) {
+    const totalTripH = tripActs.reduce((s, a) => s + a.h, 0);
+    const sav = totalTripH * (3.31 - 1.00);
+    mits.push(`🚌 <strong>Usar transporte público en traslados</strong>: ahorro ≈ <strong>${sav.toFixed(2)} kgCO₂e</strong> (${((sav/totalGhg)*100).toFixed(1)}%)`);
+  }
+  if (mits.length === 0) mits.push('Completa más actividades para ver recomendaciones de mitigación.');
+  document.getElementById('r-mitigation').innerHTML = '<ul style="list-style:none;display:flex;flex-direction:column;gap:10px">' +
+    mits.map(m => `<li style="padding:10px 14px;background:var(--green-pale);border-radius:8px;font-size:0.85rem;line-height:1.5">${m}</li>`).join('') +
+    '</ul>';
+
+  // Save preview
+  renderSavePreview();
+}
+
+function renderSavePreview() {
+  if (!lastResults) return;
+  const { totalGhg, catResults } = lastResults;
+  const name = document.getElementById('f-name').value || '—';
+  document.getElementById('save-preview').innerHTML =
+    `<strong>Nombre:</strong> ${name}<br>` +
+    `<strong>Total GHG:</strong> ${totalGhg.toFixed(2)} kgCO₂e<br>` +
+    Object.entries(catResults).map(([k, c]) =>
+      `<strong>${c.label}:</strong> ${c.total.toFixed(2)} kgCO₂e`).join('<br>');
+}
+
+// ─── Save to Sheets ───────────────────────────────────────────────────────────
+function buildPayload() {
+  const { totalGhg, catResults } = lastResults;
+  const payload = {
+    timestamp: new Date().toISOString(),
+    nombre: document.getElementById('f-name').value || '',
+    ghg_total: totalGhg.toFixed(4),
+    ghg_trabajo: (catResults.trabajo?.total || 0).toFixed(4),
+    ghg_hogar:   (catResults.hogar?.total   || 0).toFixed(4),
+    ghg_estudio: (catResults.estudio?.total  || 0).toFixed(4),
+    ghg_personal:(catResults.personal?.total || 0).toFixed(4),
+    ghg_libre:   (catResults.libre?.total    || 0).toFixed(4),
+    ghg_otros:   (catResults.otros?.total    || 0).toFixed(4),
+  };
+  // Add individual activity hours
+  for (const cat of ACTIVITIES) {
+    for (const act of cat.acts) {
+      payload['h_' + act.id] = (actValues[act.id] || 0).toFixed(2);
+    }
+  }
+  return payload;
+}
+
+async function saveToSheets() {
+  if (!lastResults) { alert('Primero calcula tu huella.'); return; }
+  const url = document.getElementById('f-script-url').value.trim();
+  if (!url) { alert('Ingresa la URL del Google Apps Script.'); return; }
+
+  const status = document.getElementById('save-status');
+  status.className = 'save-status loading';
+  status.textContent = '⏳ Guardando...';
+
+  try {
+    const payload = buildPayload();
+    const resp = await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    status.className = 'save-status ok';
+    status.textContent = '✅ Registro guardado en Google Sheets.';
+  } catch (err) {
+    status.className = 'save-status err';
+    status.textContent = '❌ Error al guardar: ' + err.message;
+  }
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+function goTo(n) {
+  document.querySelectorAll('.page').forEach((p, i) => p.classList.toggle('active', i === n));
+  document.querySelectorAll('.step-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === n);
+    b.classList.toggle('done', i < n);
+  });
+  if (n === 3) renderSavePreview();
+  window.scrollTo(0, 0);
+}
+
+// ─── Apps Script code snippet ─────────────────────────────────────────────────
+const GAS_CODE = `function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Registros") || ss.insertSheet("Registros");
+  var data = JSON.parse(e.postData.contents);
+  var keys = Object.keys(data);
+  var vals = Object.values(data);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(keys);
+    sheet.getRange(1,1,1,keys.length)
+         .setFontWeight("bold")
+         .setBackground("#2d6a4f")
+         .setFontColor("#ffffff");
+  }
+  sheet.appendRow(vals);
+  return ContentService
+    .createTextOutput(JSON.stringify({status:"OK"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+buildActivities();
+document.getElementById('apps-script-code').textContent = GAS_CODE;
+</script>
+</body>
+</html>
