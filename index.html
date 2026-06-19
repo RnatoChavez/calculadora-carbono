@@ -541,6 +541,9 @@ function buildActivities() {
           <div style="font-size:0.62rem;color:var(--text-muted);margin-top:2px">kgCO₂e/h</div>
         </div>
         <div class="level-btns">
+          <button class="lbtn sel" id="lbtn-${act.id}-n" onclick="setLevel('${act.id}','n',0)">
+            Nada<span class="lh">0h</span>
+          </button>
           <button class="lbtn" id="lbtn-${act.id}-0" onclick="setLevel('${act.id}',0,${act.poco})">
             Poco<span class="lh">${act.poco}h</span>
           </button>
@@ -562,29 +565,35 @@ function buildActivities() {
 
 function setLevel(id, level, hours) {
   actValues[id] = hours;
-  for (let i = 0; i < 3; i++) {
-    const btn = document.getElementById(`lbtn-${id}-${i}`);
-    if (btn) btn.classList.toggle('sel', i === level);
-  }
+  ['n', 0, 1, 2].forEach(l => {
+    const btn = document.getElementById(`lbtn-${id}-${l}`);
+    if (btn) btn.classList.toggle('sel', l === level);
+  });
   updateTracker();
   updateCatGhg();
 }
 
 function setLevelSilent(id, hours) {
   actValues[id] = hours;
-  // Find the activity
   let act = null;
   for (const cat of ACTIVITIES) {
     act = cat.acts.find(a => a.id === id);
     if (act) break;
   }
   if (!act) return;
+  if (hours === 0) {
+    ['n', 0, 1, 2].forEach(l => {
+      const btn = document.getElementById(`lbtn-${id}-${l}`);
+      if (btn) btn.classList.toggle('sel', l === 'n');
+    });
+    return;
+  }
   const levels = [act.poco, act.normal, act.mucho];
   const closest = findClosestLevel(levels, hours);
-  for (let i = 0; i < 3; i++) {
-    const btn = document.getElementById(`lbtn-${id}-${i}`);
-    if (btn) btn.classList.toggle('sel', i === closest);
-  }
+  ['n', 0, 1, 2].forEach(l => {
+    const btn = document.getElementById(`lbtn-${id}-${l}`);
+    if (btn) btn.classList.toggle('sel', l === closest);
+  });
 }
 
 function findClosestLevel(levels, h) {
@@ -813,9 +822,9 @@ function resetForm() {
   for (const cat of ACTIVITIES) {
     for (const act of cat.acts) {
       actValues[act.id] = 0;
-      [0,1,2].forEach(lvl => {
+      ['n',0,1,2].forEach(lvl => {
         const btn = document.getElementById(`lbtn-${act.id}-${lvl}`);
-        if (btn) btn.classList.remove('sel');
+        if (btn) btn.classList.toggle('sel', lvl === 'n');
       });
     }
   }
