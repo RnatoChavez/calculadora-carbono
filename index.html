@@ -159,7 +159,7 @@
     <button class="step-btn active" onclick="goTo(0)"><span class="num">1</span>Perfil</button>
     <button class="step-btn" onclick="goTo(1)"><span class="num">2</span>Actividades</button>
     <button class="step-btn" onclick="goTo(2)"><span class="num">3</span>Resultados</button>
-    <button class="step-btn" onclick="goTo(3)"><span class="num">4</span>Guardar</button>
+    <button class="step-btn" onclick="goTo(3)"><span class="num">4</span>Enviar</button>
   </div>
 
   <!-- PAGE 0: Perfil -->
@@ -229,36 +229,41 @@
       <p class="subtitle">Reducciones estimadas según estrategias del paper.</p>
       <div id="r-mitigation"></div>
     </div>
+    <!-- Resumen del registro (visible en página Resultados) -->
+    <div class="card">
+      <h2>📋 Resumen del registro</h2>
+      <div id="save-preview" style="font-size:0.86rem; color:var(--text); line-height:2;"></div>
+    </div>
+    <!-- Contador de participantes -->
+    <div class="card" style="text-align:center; padding:18px 24px;">
+      <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:4px;">Participantes que han enviado sus datos</div>
+      <div id="participant-count" style="font-size:2.4rem; font-weight:800; color:var(--green);">—</div>
+      <div style="font-size:0.76rem; color:var(--text-muted); margin-top:4px;">personas</div>
+    </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goTo(1)">← Editar</button>
-      <button class="btn btn-primary" onclick="goTo(3)">Guardar en Sheets →</button>
+      <button class="btn btn-primary" onclick="goTo(3)">Enviar datos →</button>
     </div>
   </div>
 
-  <!-- PAGE 3: Guardar -->
+  <!-- PAGE 3: Enviar -->
   <div class="page" id="page-3">
     <div class="card">
-      <h2>☁️ Guardar en Google Sheets</h2>
-      <p class="subtitle">Conecta con tu hoja de cálculo para almacenar el registro.</p>
+      <h2>📤 Enviar datos</h2>
+      <p class="subtitle">Tus respuestas se enviarán de forma anónima a la base de datos de la investigación.</p>
       <div class="config-box">
         <strong>🔗 Conectado a Google Sheets ✅</strong>
-        Script configurado y listo para guardar.
+        Script configurado y listo para enviar.
         <input type="text" id="f-script-url" value="https://script.google.com/macros/s/AKfycbz00vclGfF9R9BMUnsKvGBD7f3OH6xbut0_fo5B5jDPWnF-9EZIfMhhgOVTb_5WDmPRyQ/exec" style="display:none">
-      </div>
-      <div style="margin-bottom:14px">
-        <strong style="font-size:0.88rem">Resumen del registro:</strong>
-        <div id="save-preview" style="font-size:0.82rem; color:var(--text-muted); margin-top:7px; line-height:1.8;"></div>
       </div>
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="goTo(2)">← Resultados</button>
-        <button class="btn btn-save" onclick="saveToSheets()">💾 Guardar en Sheets</button>
+        <button class="btn btn-save" onclick="saveToSheets()">📤 Enviar datos</button>
       </div>
       <div class="save-status" id="save-status"></div>
     </div>
     <div class="card" style="display:none">
-      <h2>⚙️ Código para Google Apps Script</h2>
-      <p class="subtitle">Copia en script.google.com → despliega como Web App (acceso: Cualquier persona).</p>
-      <pre id="apps-script-code" style="background:#f4f4f4; padding:14px; border-radius:8px; font-size:0.73rem; overflow-x:auto; line-height:1.5; white-space:pre; color:#1a1a1a;"></pre>
+      <pre id="apps-script-code"></pre>
     </div>
   </div>
 </div>
@@ -740,8 +745,9 @@ function renderResults({ totalGhg, catResults, actList }) {
     mits.map(m => `<li style="padding:10px 14px;background:var(--green-pale);border-radius:8px;font-size:0.85rem;line-height:1.5">${m}</li>`).join('') +
     '</ul>';
 
-  // Save preview
+  // Resumen y contador en página Resultados
   renderSavePreview();
+  fetchParticipantCount();
 }
 
 function renderSavePreview() {
@@ -753,6 +759,20 @@ function renderSavePreview() {
     `<strong>Total GHG:</strong> ${totalGhg.toFixed(2)} kgCO₂e<br>` +
     Object.entries(catResults).map(([k, c]) =>
       `<strong>${c.label}:</strong> ${c.total.toFixed(2)} kgCO₂e`).join('<br>');
+}
+
+async function fetchParticipantCount() {
+  const url = document.getElementById('f-script-url')?.value?.trim();
+  if (!url) return;
+  const el = document.getElementById('participant-count');
+  try {
+    const resp = await fetch(url, { method: 'GET', mode: 'cors' });
+    const data = await resp.json();
+    if (data.count !== undefined) el.textContent = data.count;
+  } catch {
+    // CORS o sin conexión — muestra guión
+    el.textContent = '—';
+  }
 }
 
 // ─── Save to Sheets ───────────────────────────────────────────────────────────
@@ -810,7 +830,6 @@ function goTo(n) {
     b.classList.toggle('active', i === n);
     b.classList.toggle('done', i < n);
   });
-  if (n === 3) renderSavePreview();
   window.scrollTo(0, 0);
 }
 
@@ -831,6 +850,15 @@ const GAS_CODE = `function doPost(e) {
   sheet.appendRow(vals);
   return ContentService
     .createTextOutput(JSON.stringify({status:"OK"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  var ss = SpreadsheetApp.openById("18n5H3CbwbmZ6IA8wdqMAY2HjuZcUrxKyG39l8PJP3W0");
+  var sheet = ss.getSheetByName("Registros");
+  var count = sheet ? Math.max(0, sheet.getLastRow() - 1) : 0;
+  return ContentService
+    .createTextOutput(JSON.stringify({count: count}))
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 
