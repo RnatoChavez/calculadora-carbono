@@ -742,18 +742,21 @@ function renderSavePreview() {
       `<strong>${c.label}:</strong> ${c.total.toFixed(2)} kgCO₂e`).join('<br>');
 }
 
-async function fetchParticipantCount() {
+function fetchParticipantCount() {
   const url = document.getElementById('f-script-url')?.value?.trim();
   if (!url) return;
   const el = document.getElementById('participant-count');
-  try {
-    const resp = await fetch(url, { method: 'GET', mode: 'cors' });
-    const data = await resp.json();
-    if (data.count !== undefined) el.textContent = data.count;
-  } catch {
-    // CORS o sin conexión — muestra guión
-    el.textContent = '—';
-  }
+  const cbName = '_gasCb' + Date.now();
+  window[cbName] = function(data) {
+    if (data && data.count !== undefined) el.textContent = data.count;
+    delete window[cbName];
+    if (script.parentNode) script.parentNode.removeChild(script);
+  };
+  const script = document.createElement('script');
+  script.src = url + '?callback=' + cbName;
+  script.onerror = () => { el.textContent = '—'; delete window[cbName]; };
+  setTimeout(() => { if (window[cbName]) { el.textContent = '—'; delete window[cbName]; } }, 6000);
+  document.head.appendChild(script);
 }
 
 // ─── Save to Sheets ───────────────────────────────────────────────────────────
@@ -797,11 +800,30 @@ async function saveToSheets() {
       body: JSON.stringify(payload)
     });
     status.className = 'save-status ok';
-    status.textContent = '✅ Registro guardado en Google Sheets.';
+    status.innerHTML = '✅ Datos enviados correctamente. <button class="btn btn-primary" onclick="resetForm()" style="margin-left:14px;padding:8px 18px;font-size:0.85rem;">📋 Llenar nueva encuesta</button>';
+    fetchParticipantCount();
   } catch (err) {
     status.className = 'save-status err';
-    status.textContent = '❌ Error al guardar: ' + err.message;
+    status.textContent = '❌ Error al enviar: ' + err.message;
   }
+}
+
+function resetForm() {
+  document.getElementById('f-name').value = '';
+  for (const cat of ACTIVITIES) {
+    for (const act of cat.acts) {
+      actValues[act.id] = 0;
+      [0,1,2].forEach(lvl => {
+        const btn = document.getElementById(`lbtn-${act.id}-${lvl}`);
+        if (btn) btn.classList.remove('sel');
+      });
+    }
+  }
+  lastResults = null;
+  updateHoursTracker();
+  document.getElementById('save-status').className = 'save-status';
+  document.getElementById('save-status').textContent = '';
+  goTo(0);
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
@@ -838,8 +860,13 @@ function doGet(e) {
   var ss = SpreadsheetApp.openById("18n5H3CbwbmZ6IA8wdqMAY2HjuZcUrxKyG39l8PJP3W0");
   var sheet = ss.getSheetByName("Registros");
   var count = sheet ? Math.max(0, sheet.getLastRow() - 1) : 0;
-  return ContentService
-    .createTextOutput(JSON.stringify({count: count}))
+  var json = JSON.stringify({count: count});
+  var cb = e && e.parameter && e.parameter.callback;
+  if (cb) {
+    return ContentService.createTextOutput(cb + '(' + json + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 
@@ -849,4 +876,3 @@ document.getElementById('apps-script-code').textContent = GAS_CODE;
 </script>
 </body>
 </html>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
