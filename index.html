@@ -159,7 +159,6 @@
     <button class="step-btn active" onclick="goTo(0)"><span class="num">1</span>Perfil</button>
     <button class="step-btn" onclick="goTo(1)"><span class="num">2</span>Actividades</button>
     <button class="step-btn" onclick="goTo(2)"><span class="num">3</span>Resultados</button>
-    <button class="step-btn" onclick="goTo(3)"><span class="num">4</span>Enviar</button>
   </div>
 
   <!-- PAGE 0: Perfil -->
@@ -240,32 +239,14 @@
       <div id="participant-count" style="font-size:2.4rem; font-weight:800; color:var(--green);">—</div>
       <div style="font-size:0.76rem; color:var(--text-muted); margin-top:4px;">personas</div>
     </div>
+    <input type="text" id="f-script-url" value="https://script.google.com/macros/s/AKfycbz00vclGfF9R9BMUnsKvGBD7f3OH6xbut0_fo5B5jDPWnF-9EZIfMhhgOVTb_5WDmPRyQ/exec" style="display:none">
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goTo(1)">← Editar</button>
-      <button class="btn btn-primary" onclick="goTo(3)">Enviar datos →</button>
+      <button class="btn btn-save" onclick="saveToSheets()">📤 Enviar datos</button>
     </div>
+    <div class="save-status" id="save-status"></div>
   </div>
-
-  <!-- PAGE 3: Enviar -->
-  <div class="page" id="page-3">
-    <div class="card">
-      <h2>📤 Enviar datos</h2>
-      <p class="subtitle">Tus respuestas se enviarán de forma anónima a la base de datos de la investigación.</p>
-      <div class="config-box">
-        <strong>🔗 Conectado a Google Sheets ✅</strong>
-        Script configurado y listo para enviar.
-        <input type="text" id="f-script-url" value="https://script.google.com/macros/s/AKfycbz00vclGfF9R9BMUnsKvGBD7f3OH6xbut0_fo5B5jDPWnF-9EZIfMhhgOVTb_5WDmPRyQ/exec" style="display:none">
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-secondary" onclick="goTo(2)">← Resultados</button>
-        <button class="btn btn-save" onclick="saveToSheets()">📤 Enviar datos</button>
-      </div>
-      <div class="save-status" id="save-status"></div>
-    </div>
-    <div class="card" style="display:none">
-      <pre id="apps-script-code"></pre>
-    </div>
-  </div>
+  <div style="display:none"><pre id="apps-script-code"></pre></div>
 </div>
 
 <script>
@@ -868,3 +849,4 @@ document.getElementById('apps-script-code').textContent = GAS_CODE;
 </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
