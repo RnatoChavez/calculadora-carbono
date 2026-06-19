@@ -241,9 +241,9 @@
       <h2>☁️ Guardar en Google Sheets</h2>
       <p class="subtitle">Conecta con tu hoja de cálculo para almacenar el registro.</p>
       <div class="config-box">
-        <strong>🔗 URL del Google Apps Script Web App</strong>
-        Pega la URL de tu script desplegado:
-        <input type="text" id="f-script-url" placeholder="https://script.google.com/macros/s/XXXXXXXXXX/exec">
+        <strong>🔗 Conectado a Google Sheets ✅</strong>
+        Script configurado y listo para guardar.
+        <input type="text" id="f-script-url" value="https://script.google.com/macros/s/AKfycbz00vclGfF9R9BMUnsKvGBD7f3OH6xbut0_fo5B5jDPWnF-9EZIfMhhgOVTb_5WDmPRyQ/exec" style="display:none">
       </div>
       <div style="margin-bottom:14px">
         <strong style="font-size:0.88rem">Resumen del registro:</strong>
@@ -255,7 +255,7 @@
       </div>
       <div class="save-status" id="save-status"></div>
     </div>
-    <div class="card">
+    <div class="card" style="display:none">
       <h2>⚙️ Código para Google Apps Script</h2>
       <p class="subtitle">Copia en script.google.com → despliega como Web App (acceso: Cualquier persona).</p>
       <pre id="apps-script-code" style="background:#f4f4f4; padding:14px; border-radius:8px; font-size:0.73rem; overflow-x:auto; line-height:1.5; white-space:pre; color:#1a1a1a;"></pre>
@@ -835,8 +835,4 @@ const GAS_CODE = `function doPost(e) {
 }`;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-buildActivities();
-document.getElementById('apps-script-code').textContent = GAS_CODE;
-</script>
-</body>
-</html>
+buildActivitie
