@@ -410,12 +410,12 @@ const PROFILES = {
       building:0, vehicle_maint:0, home_mgmt:0, family_care:0, family_support:0, other_house:0,
       baby_nursing:0, baby_care:0, play_babies:0, accomp_child:0, child_edu:0, accomp_school:0,
       shopping:0.25, admin_svc:0, commercial_svc:0, trip_house:0.25, volunteer:0, trip_volunteer:0,
-      classes:6, homework:2, tutoring:0, school_rest:0.5, commute_school:1, self_study:1,
+      classes:5, homework:1.5, tutoring:0, school_rest:0.5, commute_school:1, self_study:0.5,
       social_act:0, worship:0, ceremony:0, socializing:0.5, family_comm:0.25, phone_call:0.25,
       email_comm:0.25, mail_comm:0, entertainment:0, art_creation:0, sweet_making:0,
       productive_hob:0, gardening_hob:0, pet_care:0, dog_walk:0, clothes_hob:0, hobbies:0.25,
-      gaming:0.5, drive_pleasure:0, other_hobbies:0, aerobic:0, ball_games:0.25, water_sports:0,
-      prod_sports:0, other_sports:0, read_books:0.25, read_news:0, watch_tv:1, watch_video:0,
+      gaming:0.25, drive_pleasure:0, other_hobbies:0, aerobic:0, ball_games:0.25, water_sports:0,
+      prod_sports:0, other_sports:0, read_books:0.25, read_news:0, watch_tv:0.5, watch_video:0,
       listen_radio:0, listen_music:0.25, resting:0.25,
       trip_hobbies:0, other_trips:0, stula_act:0, other_act:0.25
     }
@@ -424,8 +424,8 @@ const PROFILES = {
     label: '💼 Trabajador/a de oficina',
     v: {
       sleep:7.5, nap:0, medical_treat:0, medical_exam:0, bathing:0.5, personal_care:0.5,
-      personal_svc:0, breakfast:0.5, lunch:0.5, dinner:1, late_snack:0, light_meals:0,
-      mainjob:8, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:1.5, rest_work:0.5, jobhunting:0,
+      personal_svc:0, breakfast:0.5, lunch:0.5, dinner:0.75, late_snack:0, light_meals:0,
+      mainjob:8, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:1, rest_work:0.5, jobhunting:0,
       meals_mgmt:0.5, dessert:0, gardening:0, house_maint:0, clothes_maint:0.25, clothes_making:0,
       building:0, vehicle_maint:0, home_mgmt:0.25, family_care:0, family_support:0, other_house:0.25,
       baby_nursing:0, baby_care:0, play_babies:0, accomp_child:0, child_edu:0, accomp_school:0,
@@ -464,26 +464,26 @@ const PROFILES = {
     label: '🎉 Fin de semana activo',
     v: {
       sleep:8.5, nap:0, medical_treat:0, medical_exam:0, bathing:0.75, personal_care:0.5,
-      personal_svc:0, breakfast:0.5, lunch:0.75, dinner:1.25, late_snack:0, light_meals:0.25,
+      personal_svc:0, breakfast:0.5, lunch:0.75, dinner:1, late_snack:0, light_meals:0.25,
       mainjob:0, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:0, rest_work:0, jobhunting:0,
-      meals_mgmt:1.5, dessert:0, gardening:0.5, house_maint:0.5, clothes_maint:0.25, clothes_making:0,
+      meals_mgmt:1, dessert:0, gardening:0.5, house_maint:0.5, clothes_maint:0.25, clothes_making:0,
       building:0, vehicle_maint:0, home_mgmt:0, family_care:0, family_support:0, other_house:0.25,
       baby_nursing:0, baby_care:0, play_babies:0, accomp_child:0, child_edu:0, accomp_school:0,
-      shopping:1, admin_svc:0, commercial_svc:0, trip_house:0.5, volunteer:0, trip_volunteer:0,
+      shopping:0.75, admin_svc:0, commercial_svc:0, trip_house:0.5, volunteer:0, trip_volunteer:0,
       classes:0, homework:0, tutoring:0, school_rest:0, commute_school:0, self_study:0,
       social_act:0, worship:0, ceremony:0, socializing:1.5, family_comm:0.5, phone_call:0.25,
       email_comm:0, mail_comm:0, entertainment:0.5, art_creation:0, sweet_making:0,
       productive_hob:0, gardening_hob:0, pet_care:0, dog_walk:0, clothes_hob:0, hobbies:0.5,
       gaming:0, drive_pleasure:0.5, other_hobbies:0, aerobic:1, ball_games:0.5, water_sports:0,
-      prod_sports:0, other_sports:0, read_books:0, read_news:0.25, watch_tv:1.5, watch_video:0.5,
+      prod_sports:0, other_sports:0, read_books:0, read_news:0.25, watch_tv:1, watch_video:0.5,
       listen_radio:0, listen_music:0.25, resting:0.5,
-      trip_hobbies:0.25, other_trips:0.5, stula_act:0, other_act:0
+      trip_hobbies:0.25, other_trips:0, stula_act:0, other_act:0
     }
   },
   rest: {
     label: '😴 Día de descanso',
     v: {
-      sleep:9, nap:1, medical_treat:0, medical_exam:0, bathing:0.75, personal_care:0.5,
+      sleep:9, nap:0.75, medical_treat:0, medical_exam:0, bathing:0.75, personal_care:0.5,
       personal_svc:0, breakfast:0.5, lunch:0.75, dinner:1, late_snack:0.25, light_meals:0.25,
       mainjob:0, trip_mainjob:0, sidejob:0, trip_sidejob:0, commute_work:0, rest_work:0, jobhunting:0,
       meals_mgmt:1.5, dessert:0, gardening:0, house_maint:0.5, clothes_maint:0.5, clothes_making:0,
@@ -495,7 +495,7 @@ const PROFILES = {
       email_comm:0.25, mail_comm:0, entertainment:0, art_creation:0, sweet_making:0,
       productive_hob:0, gardening_hob:0, pet_care:0, dog_walk:0, clothes_hob:0, hobbies:0,
       gaming:0, drive_pleasure:0, other_hobbies:0, aerobic:0, ball_games:0, water_sports:0,
-      prod_sports:0, other_sports:0, read_books:0.5, read_news:0.5, watch_tv:3, watch_video:0.5,
+      prod_sports:0, other_sports:0, read_books:0.5, read_news:0.5, watch_tv:2, watch_video:0.5,
       listen_radio:0.25, listen_music:0, resting:1,
       trip_hobbies:0, other_trips:0, stula_act:0, other_act:0.25
     }
@@ -877,11 +877,11 @@ function doGet(e) {
   }
   return ContentService.createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
-}`;
-
-// ─── Init ─────────────────────────────────────────────────────────────────────
-buildActivities();
+}
+`;
 document.getElementById('apps-script-code').textContent = GAS_CODE;
+buildActivities();
+fetchParticipantCount();
 </script>
 </body>
 </html>
